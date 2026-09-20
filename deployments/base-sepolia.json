@@ -1,0 +1,9 @@
+{
+  "chainId": 84532,
+  "network": "Base Sepolia",
+  "factory": "0x9f21331a9DF229B26E2C0fc802F333bcaE4cB23B",
+  "factoryDeploymentTx": "0xa0246191bd2f5b9d81f2ef52323023c581d2440eafcc4c9b1bd936656523b5e9",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "deployer": "0xD3842dFbFD4700fCF4B0354B611fCD81b6679760",
+  "purpose": "openINDEX Base Sepolia deployment"
+}

@@ -143,6 +143,17 @@ These addresses are testing fixtures, not recommended production addresses.
 Never copy the local `.env` file into a public repository; use
 `.env.example` as the template.
 
+## Base Sepolia deployment
+
+The openINDEX factory is deployed on Base Sepolia:
+
+- Factory:
+  `0x9f21331a9DF229B26E2C0fc802F333bcaE4cB23B`
+- Deployment transaction:
+  `0xa0246191bd2f5b9d81f2ef52323023c581d2440eafcc4c9b1bd936656523b5e9`
+
+Full metadata is in [`deployments/base-sepolia.json`](./deployments/base-sepolia.json).
+
 ## Example configuration
 
 `examples/dscb.json` contains a separate 18-token example based on the local
