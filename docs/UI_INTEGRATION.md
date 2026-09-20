@@ -1,7 +1,7 @@
 # UI integration gate
 
 The current basket UI must not be pointed at an un-deployed or un-fork-tested
-openBSKT address. Once a basket is deployed and verified, the sell control
+openINDEX address. Once a basket is deployed and verified, the sell control
 should:
 
 1. load the basket address and `getConstituents()` from configuration;

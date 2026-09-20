@@ -10,7 +10,7 @@
     "corpusDirectory": "medusa-corpus",
     "coverageEnabled": true,
     "coverageFormats": ["html", "lcov"],
-    "targetContracts": ["MedusaOpenBSKTHarness"],
+    "targetContracts": ["MedusaOpenINDEXHarness"],
     "constructorArgs": {},
     "deployerAddress": "0x30000",
     "senderAddresses": ["0x10000", "0x20000", "0x30000"],

@@ -2,8 +2,8 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTFactory.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXFactory.sol";
 
 contract MockToken {
     string public name;
@@ -61,15 +61,15 @@ contract MockToken {
     }
 }
 
-contract OpenBSKTTest is Test {
+contract OpenINDEXTest is Test {
     MockToken a = new MockToken("A", "A");
     MockToken b = new MockToken("B", "B");
     MockToken usdc = new MockToken("USD Coin", "USDC");
     address manager = address(0x11);
     address signer = address(0x22);
     address user = address(0x33);
-    OpenBSKT basket;
-    OpenBSKTManagerNFT managerNFT;
+    OpenINDEX basket;
+    OpenINDEXManagerNFT managerNFT;
 
     function setUp() public {
         address[] memory tokens = new address[](2);
@@ -78,9 +78,9 @@ contract OpenBSKTTest is Test {
         uint256[] memory weights = new uint256[](2);
         weights[0] = 6000;
         weights[1] = 4000;
-        managerNFT = new OpenBSKTManagerNFT("Open Basket Manager", "OBSKT-M", address(this));
+        managerNFT = new OpenINDEXManagerNFT("Open Basket Manager", "OBSKT-M", address(this));
         uint256 managerTokenId = managerNFT.mint(manager);
-        basket = new OpenBSKT(
+        basket = new OpenINDEX(
             "Open Basket",
             "OBSKT",
             "ipfs://metadata",
@@ -137,7 +137,7 @@ contract OpenBSKTTest is Test {
     }
 
     function testFactoryCreatesCallerOwnedBasket() public {
-        OpenBSKTFactory factory = new OpenBSKTFactory(address(usdc));
+        OpenINDEXFactory factory = new OpenINDEXFactory(address(usdc), keccak256(type(OpenINDEX).creationCode));
         address[] memory tokens = new address[](2);
         tokens[0] = address(a);
         tokens[1] = address(b);
@@ -146,10 +146,24 @@ contract OpenBSKTTest is Test {
         weights[1] = 5000;
         vm.prank(user);
         address created = factory.createBasket(
-            "User Basket", "USER", "ipfs://user", tokens, weights, signer, type(OpenBSKT).creationCode
+            "User Basket", "USER", "ipfs://user", tokens, weights, signer, type(OpenINDEX).creationCode
         );
-        assertEq(OpenBSKT(payable(created)).manager(), user);
+        assertEq(OpenINDEX(payable(created)).manager(), user);
         assertEq(factory.basketAt(0), created);
+    }
+
+    function testFactoryRejectsUnknownCreationCode() public {
+        OpenINDEXFactory factory = new OpenINDEXFactory(address(usdc), keccak256(type(OpenINDEX).creationCode));
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(a);
+        tokens[1] = address(b);
+        uint256[] memory weights = new uint256[](2);
+        weights[0] = 5000;
+        weights[1] = 5000;
+
+        vm.prank(user);
+        vm.expectRevert(OpenINDEXFactory.InvalidCreationCode.selector);
+        factory.createBasket("User Basket", "USER", "ipfs://user", tokens, weights, signer, hex"6000");
     }
 
     function testFundedTokenCannotBeRemovedByCompositionUpdate() public {
@@ -169,7 +183,7 @@ contract OpenBSKTTest is Test {
         vm.prank(manager);
         basket.proposeComposition(tokens, weights);
         vm.warp(block.timestamp + 1 days);
-        vm.expectRevert(OpenBSKT.ReserveLocked.selector);
+        vm.expectRevert(OpenINDEX.ReserveLocked.selector);
         basket.executeComposition();
     }
 

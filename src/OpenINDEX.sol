@@ -31,9 +31,21 @@ interface IManagerNFT {
     ) external view returns (address);
 }
 
+interface IOpenINDEXAdapter {
+    function openINDEXAdapter() external view returns (bytes4);
+    function venue() external view returns (address);
+    function swap(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minOut,
+        bytes calldata venueData
+    ) external payable returns (uint256 amountOut);
+}
+
 /// @notice Generic ERC-7621-style multi-asset basket with a transferable manager NFT.
 /// @dev The core has no basket-specific tokens, weights, metadata, or route keys.
-contract OpenBSKT {
+contract OpenINDEX {
     uint256 public constant BPS = 10_000;
     uint256 public constant MANAGER_TOKEN_ID = 0;
     uint256 public constant COMPOSITION_DELAY = 1 days;
@@ -98,6 +110,7 @@ contract OpenBSKT {
     error BadSignature();
     error TransferFailed();
     error ApprovalFailed();
+    error InvalidAdapter();
     error InsufficientShares();
     error InvalidReceiver();
     error ReserveLocked();
@@ -279,6 +292,7 @@ contract OpenBSKT {
         bool allowed
     ) external onlyManager {
         if (router == address(0)) revert ZeroAddress();
+        if (allowed && !_isAdapter(router)) revert InvalidAdapter();
         routers[router] = allowed;
         emit RouterSet(router, allowed);
     }
@@ -576,17 +590,38 @@ contract OpenBSKT {
         uint256 beforeIn = swap.tokenIn == address(0) ? address(this).balance : _balanceOfToken(swap.tokenIn);
         uint256 beforeOut = swap.tokenOut == address(0) ? address(this).balance : _balanceOfToken(swap.tokenOut);
         if (swap.tokenIn != address(0)) _forceApprove(swap.tokenIn, swap.router, swap.amountIn);
-        (bool ok,) = swap.router.call{value: swap.value}(swap.data);
+        uint256 adapterOut;
+        try IOpenINDEXAdapter(swap.router).swap{value: swap.value}(
+            swap.tokenIn, swap.tokenOut, swap.amountIn, swap.minOut, swap.data
+        ) returns (
+            uint256 adapterReceived
+        ) {
+            adapterOut = adapterReceived;
+        } catch {
+            if (swap.tokenIn != address(0)) _forceApprove(swap.tokenIn, swap.router, 0);
+            return (false, 0);
+        }
         if (swap.tokenIn != address(0)) _forceApprove(swap.tokenIn, swap.router, 0);
-        if (!ok) return (false, 0);
         uint256 afterIn = swap.tokenIn == address(0) ? address(this).balance : _balanceOfToken(swap.tokenIn);
         uint256 afterOut = swap.tokenOut == address(0) ? address(this).balance : _balanceOfToken(swap.tokenOut);
         if (beforeIn < afterIn || beforeIn - afterIn > swap.amountIn) revert Overspend();
         if (afterOut < beforeOut) revert Overspend();
         uint256 spent = beforeIn - afterIn;
         uint256 received = afterOut - beforeOut;
-        if (spent != 0 && received == 0) revert RouteFailed(0);
+        if (adapterOut != received || (spent != 0 && received == 0)) revert RouteFailed(0);
         return (true, received);
+    }
+
+    function _isAdapter(
+        address router
+    ) internal view returns (bool) {
+        (bool markerOk, bytes memory markerData) =
+            router.staticcall(abi.encodeWithSelector(IOpenINDEXAdapter.openINDEXAdapter.selector));
+        (bool venueOk, bytes memory venueData) =
+            router.staticcall(abi.encodeWithSelector(IOpenINDEXAdapter.venue.selector));
+        return markerOk && markerData.length >= 32 && abi.decode(markerData, (bytes4)) == bytes4(keccak256("openINDEX"))
+            && venueOk && venueData.length >= 32 && abi.decode(venueData, (address)) != address(0)
+            && router.code.length != 0;
     }
 
     function _forceApprove(
@@ -615,7 +650,12 @@ contract OpenBSKT {
             v := byte(0, calldataload(add(signature.offset, 64)))
         }
         if (v < 27) v += 27;
+        if (v != 27 && v != 28) revert BadSignature();
+        if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
+            revert BadSignature();
+        }
         signer = ecrecover(digest, v, r, s);
+        if (signer == address(0)) revert BadSignature();
     }
 
     function _setComposition(

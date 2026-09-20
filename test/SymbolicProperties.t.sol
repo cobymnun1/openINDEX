@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 /// @notice Halmos properties for the arithmetic used by partial redemption.
-contract OpenBSKTSymbolicProperties {
+contract OpenINDEXSymbolicProperties {
     uint256 internal constant BPS = 10_000;
 
     function check_allFailureBurn(

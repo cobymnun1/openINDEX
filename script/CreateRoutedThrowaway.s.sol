@@ -2,9 +2,9 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Script.sol";
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTFactory.sol";
-import "../src/OpenBSKTExecutionAdapter.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXFactory.sol";
+import "../src/OpenINDEXExecutionAdapter.sol";
 
 contract CreateRoutedThrowaway is Script {
     uint256 private constant AMOUNT_PER_ROUTE = 333_333_333_333_333;
@@ -16,7 +16,7 @@ contract CreateRoutedThrowaway is Script {
     address private constant TIG = 0x0C03Ce270B4826Ec62e7DD007f0B716068639F7B;
 
     function run() external returns (address basket) {
-        OpenBSKTFactory factory = OpenBSKTFactory(vm.envAddress("FACTORY_ADDRESS"));
+        OpenINDEXFactory factory = OpenINDEXFactory(vm.envAddress("FACTORY_ADDRESS"));
         uint256 key = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address[] memory tokens = new address[](3);
         tokens[0] = BIO;
@@ -28,7 +28,7 @@ contract CreateRoutedThrowaway is Script {
         weights[2] = 3333;
         uint256 deadline = block.timestamp + 1 hours;
 
-        OpenBSKT.Swap[] memory swaps = new OpenBSKT.Swap[](3);
+        OpenINDEX.Swap[] memory swaps = new OpenINDEX.Swap[](3);
         swaps[0] = _swap(BIO, vm.envBytes("BIO_DATA"), vm.envUint("BIO_MIN"));
         swaps[1] = _swap(TRAC, vm.envBytes("TRAC_DATA"), vm.envUint("TRAC_MIN"));
         swaps[2] = _swap(TIG, vm.envBytes("TIG_DATA"), vm.envUint("TIG_MIN"));
@@ -41,15 +41,15 @@ contract CreateRoutedThrowaway is Script {
             tokens,
             weights,
             vm.addr(key),
-            type(OpenBSKT).creationCode
+            type(OpenINDEX).creationCode
         );
-        OpenBSKT(payable(basket)).setRouter(ADAPTER, true);
+        OpenINDEX(payable(basket)).setRouter(ADAPTER, true);
         bytes32 payload = keccak256(
             abi.encode(
                 basket,
                 block.chainid,
                 keccak256("DEPOSIT_ETH"),
-                OpenBSKT(payable(basket)).routeNonce(),
+                OpenINDEX(payable(basket)).routeNonce(),
                 QUOTED_SHARES,
                 TOTAL_ETH,
                 keccak256(abi.encode(tokens, weights)),
@@ -59,7 +59,7 @@ contract CreateRoutedThrowaway is Script {
         );
         bytes32 digest = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payload));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, digest);
-        OpenBSKT(payable(basket)).depositETH{value: TOTAL_ETH}(
+        OpenINDEX(payable(basket)).depositETH{value: TOTAL_ETH}(
             QUOTED_SHARES, QUOTED_SHARES, deadline, swaps, abi.encodePacked(r, s, v)
         );
         vm.stopBroadcast();
@@ -69,17 +69,15 @@ contract CreateRoutedThrowaway is Script {
         address tokenOut,
         bytes memory venueData,
         uint256 minOut
-    ) private pure returns (OpenBSKT.Swap memory swap) {
-        swap = OpenBSKT.Swap({
+    ) private pure returns (OpenINDEX.Swap memory swap) {
+        swap = OpenINDEX.Swap({
             router: ADAPTER,
             tokenIn: address(0),
             tokenOut: tokenOut,
             amountIn: AMOUNT_PER_ROUTE,
             minOut: minOut,
             value: AMOUNT_PER_ROUTE,
-            data: abi.encodeCall(
-                OpenBSKTExecutionAdapter.swap, (address(0), tokenOut, AMOUNT_PER_ROUTE, minOut, venueData)
-            )
+            data: venueData
         });
     }
 }

@@ -2,8 +2,9 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTManagerNFT.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXExecutionAdapter.sol";
+import "../src/OpenINDEXManagerNFT.sol";
 
 contract AdversarialToken {
     uint8 public constant decimals = 18;
@@ -93,10 +94,11 @@ contract AdversarialRouter {
         address basket,
         bytes calldata innerCall,
         address tokenOut,
-        uint256 amountOut
+        uint256 amountOut,
+        address recipient
     ) external {
         attemptReentry(basket, innerCall);
-        AdversarialToken(tokenOut).transfer(basket, amountOut);
+        AdversarialToken(tokenOut).transfer(recipient, amountOut);
     }
 
     receive() external payable {}
@@ -107,9 +109,10 @@ contract AdversarialFuzzTest is Test {
     AdversarialToken private tokenA;
     AdversarialToken private tokenB;
     AdversarialToken private usdc;
-    OpenBSKT private basket;
-    OpenBSKTManagerNFT private managerNFT;
+    OpenINDEX private basket;
+    OpenINDEXManagerNFT private managerNFT;
     AdversarialRouter private router;
+    OpenINDEXExecutionAdapter private adapter;
     address private user = address(0xBEEF);
     address private signer;
 
@@ -119,8 +122,9 @@ contract AdversarialFuzzTest is Test {
         tokenB = new AdversarialToken();
         usdc = new AdversarialToken();
         router = new AdversarialRouter();
+        adapter = new OpenINDEXExecutionAdapter(address(router));
 
-        managerNFT = new OpenBSKTManagerNFT("Manager", "MGR", address(this));
+        managerNFT = new OpenINDEXManagerNFT("Manager", "MGR", address(this));
         uint256 managerTokenId = managerNFT.mint(address(this));
         address[] memory tokens = new address[](2);
         tokens[0] = address(tokenA);
@@ -128,7 +132,7 @@ contract AdversarialFuzzTest is Test {
         uint256[] memory weights = new uint256[](2);
         weights[0] = 6000;
         weights[1] = 4000;
-        basket = new OpenBSKT(
+        basket = new OpenINDEX(
             "Adversarial Basket",
             "ABSKT",
             "test://basket",
@@ -146,23 +150,22 @@ contract AdversarialFuzzTest is Test {
     ) public {
         uint256 output = bound(quotedOutput, 1, 1000 ether);
         _seedBasket();
-        router = new AdversarialRouter();
-        basket.setRouter(address(router), true);
+        basket.setRouter(address(adapter), true);
         vm.deal(address(router), output);
 
-        OpenBSKT.Swap[] memory swaps = new OpenBSKT.Swap[](2);
-        swaps[0] = OpenBSKT.Swap({
-            router: address(router),
+        OpenINDEX.Swap[] memory swaps = new OpenINDEX.Swap[](2);
+        swaps[0] = OpenINDEX.Swap({
+            router: address(adapter),
             tokenIn: address(tokenA),
             tokenOut: address(0),
             amountIn: 600 ether,
             minOut: 1,
             value: 0,
             data: abi.encodeCall(
-                AdversarialRouter.swapTokenForEth, (address(tokenA), 600 ether, output, address(basket))
+                AdversarialRouter.swapTokenForEth, (address(tokenA), 600 ether, output, address(adapter))
             )
         });
-        swaps[1] = OpenBSKT.Swap({
+        swaps[1] = OpenINDEX.Swap({
             router: address(0),
             tokenIn: address(tokenB),
             tokenOut: address(0),
@@ -184,32 +187,77 @@ contract AdversarialFuzzTest is Test {
         assertEq(tokenA.balanceOf(address(basket)), 0);
     }
 
+    function testHighSSignatureIsRejected() public {
+        _seedBasket();
+        basket.setRouter(address(adapter), true);
+        vm.deal(address(router), 1);
+
+        OpenINDEX.Swap[] memory swaps = new OpenINDEX.Swap[](2);
+        swaps[0] = OpenINDEX.Swap({
+            router: address(adapter),
+            tokenIn: address(tokenA),
+            tokenOut: address(0),
+            amountIn: 600 ether,
+            minOut: 1,
+            value: 0,
+            data: abi.encodeCall(AdversarialRouter.swapTokenForEth, (address(tokenA), 600 ether, 1, address(adapter)))
+        });
+        swaps[1] = OpenINDEX.Swap({
+            router: address(0),
+            tokenIn: address(tokenB),
+            tokenOut: address(0),
+            amountIn: 400 ether,
+            minOut: 1,
+            value: 0,
+            data: ""
+        });
+
+        uint256 shares = basket.balanceOf(user);
+        bytes memory signature = _signQuote(keccak256("REDEEM_ETH"), shares, shares, swaps, block.timestamp + 1 days);
+        bytes32 s;
+        uint8 v;
+        assembly {
+            s := mload(add(signature, 64))
+            v := byte(0, mload(add(signature, 96)))
+        }
+        s = bytes32(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141 - uint256(s));
+        v = v == 27 ? 28 : 27;
+        assembly {
+            mstore(add(signature, 64), s)
+            mstore(add(signature, 96), shl(248, v))
+        }
+
+        vm.prank(user);
+        vm.expectRevert(OpenINDEX.BadSignature.selector);
+        basket.redeemETH(shares, 0, block.timestamp + 1 days, swaps, signature);
+    }
+
     function testFuzzFailedRouteDoesNotChangeReserves(
         uint128 amount
     ) public {
         uint256 input = bound(amount, 1, 1000 ether);
         _seedBasket();
-        basket.setRouter(address(router), true);
+        basket.setRouter(address(adapter), true);
         router.setFail(true);
 
-        OpenBSKT.Swap memory swap = OpenBSKT.Swap({
-            router: address(router),
+        OpenINDEX.Swap memory swap = OpenINDEX.Swap({
+            router: address(adapter),
             tokenIn: address(tokenA),
             tokenOut: address(tokenB),
             amountIn: input,
             minOut: 1,
             value: 0,
-            data: abi.encodeCall(AdversarialRouter.swapTokenForEth, (address(tokenA), input, 1, address(basket)))
+            data: abi.encodeCall(AdversarialRouter.swapTokenForEth, (address(tokenA), input, 1, address(adapter)))
         });
-        vm.expectRevert(abi.encodeWithSelector(OpenBSKT.RouteFailed.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(OpenINDEX.RouteFailed.selector, 0));
         basket.managerSwap(swap);
         assertEq(tokenA.balanceOf(address(basket)), 600 ether);
         assertEq(tokenB.balanceOf(address(basket)), 400 ether);
     }
 
     function testUnapprovedRouterAndSameTokenAreRejected() public {
-        OpenBSKT.Swap memory swap = OpenBSKT.Swap({
-            router: address(router),
+        OpenINDEX.Swap memory swap = OpenINDEX.Swap({
+            router: address(adapter),
             tokenIn: address(tokenA),
             tokenOut: address(tokenB),
             amountIn: 1,
@@ -217,21 +265,21 @@ contract AdversarialFuzzTest is Test {
             value: 0,
             data: ""
         });
-        vm.expectRevert(abi.encodeWithSelector(OpenBSKT.RouteFailed.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(OpenINDEX.RouteFailed.selector, 0));
         basket.managerSwap(swap);
 
-        basket.setRouter(address(router), true);
+        basket.setRouter(address(adapter), true);
         swap.tokenOut = address(tokenA);
-        vm.expectRevert(abi.encodeWithSelector(OpenBSKT.RouteFailed.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(OpenINDEX.RouteFailed.selector, 0));
         basket.managerSwap(swap);
     }
 
     function testReentrantRouterCannotReenterManagerSwap() public {
         _seedBasket();
-        basket.setRouter(address(router), true);
+        basket.setRouter(address(adapter), true);
         managerNFT.transferFrom(address(this), address(router), 0);
         tokenB.mint(address(router), 1);
-        OpenBSKT.Swap memory inner = OpenBSKT.Swap({
+        OpenINDEX.Swap memory inner = OpenINDEX.Swap({
             router: address(0),
             tokenIn: address(tokenA),
             tokenOut: address(tokenB),
@@ -240,20 +288,21 @@ contract AdversarialFuzzTest is Test {
             value: 0,
             data: ""
         });
-        bytes memory innerCall = abi.encodeCall(OpenBSKT.managerSwap, (inner));
-        OpenBSKT.Swap memory outer = OpenBSKT.Swap({
-            router: address(router),
+        bytes memory innerCall = abi.encodeCall(OpenINDEX.managerSwap, (inner));
+        OpenINDEX.Swap memory outer = OpenINDEX.Swap({
+            router: address(adapter),
             tokenIn: address(tokenA),
             tokenOut: address(tokenB),
             amountIn: 1,
             minOut: 1,
             value: 0,
             data: abi.encodeCall(
-                AdversarialRouter.attemptReentryAndPay, (address(basket), innerCall, address(tokenB), 1)
+                AdversarialRouter.attemptReentryAndPay,
+                (address(basket), innerCall, address(tokenB), 1, address(adapter))
             )
         });
 
-        router.invoke(address(basket), abi.encodeCall(OpenBSKT.managerSwap, (outer)));
+        router.invoke(address(basket), abi.encodeCall(OpenINDEX.managerSwap, (outer)));
         assertTrue(router.reentryBlocked());
     }
 
@@ -274,9 +323,9 @@ contract AdversarialFuzzTest is Test {
         bytes32 operation,
         uint256 quotedShares,
         uint256 amount,
-        OpenBSKT.Swap[] memory swaps,
+        OpenINDEX.Swap[] memory swaps,
         uint256 deadline
-    ) private returns (bytes memory) {
+    ) private view returns (bytes memory) {
         (address[] memory tokens, uint256[] memory weights) = basket.getConstituents();
         bytes32 payload = keccak256(
             abi.encode(

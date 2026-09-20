@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTManagerNFT.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXManagerNFT.sol";
 
 contract MedusaToken {
     uint8 public constant decimals = 18;
@@ -51,9 +51,9 @@ contract MedusaToken {
 }
 
 /// @notice Constructor-complete Medusa target with executable properties.
-contract MedusaOpenBSKTHarness {
-    OpenBSKT public basket;
-    OpenBSKTManagerNFT public managerNFT;
+contract MedusaOpenINDEXHarness {
+    OpenINDEX public basket;
+    OpenINDEXManagerNFT public managerNFT;
     MedusaToken public tokenA;
     MedusaToken public tokenB;
     MedusaToken public usdc;
@@ -63,7 +63,7 @@ contract MedusaOpenBSKTHarness {
         tokenB = new MedusaToken();
         usdc = new MedusaToken();
 
-        managerNFT = new OpenBSKTManagerNFT("Medusa Manager", "MM", address(this));
+        managerNFT = new OpenINDEXManagerNFT("Medusa Manager", "MM", address(this));
         uint256 managerTokenId = managerNFT.mint(address(this));
 
         address[] memory tokens = new address[](2);
@@ -73,7 +73,7 @@ contract MedusaOpenBSKTHarness {
         weights[0] = 6000;
         weights[1] = 4000;
 
-        basket = new OpenBSKT(
+        basket = new OpenINDEX(
             "Medusa Basket",
             "MB",
             "medusa://basket",

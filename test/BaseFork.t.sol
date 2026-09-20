@@ -2,8 +2,8 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTManagerNFT.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXManagerNFT.sol";
 
 interface IERC20MetadataFork {
     function decimals() external view returns (uint8);
@@ -31,7 +31,7 @@ contract BaseForkTest is Test {
         assertEq(IERC20MetadataFork(BASE_USDC).decimals(), 6);
         assertEq(IERC20MetadataFork(BASE_WETH).decimals(), 18);
 
-        OpenBSKTManagerNFT managerNFT = new OpenBSKTManagerNFT("Fork Manager", "FM", address(this));
+        OpenINDEXManagerNFT managerNFT = new OpenINDEXManagerNFT("Fork Manager", "FM", address(this));
         uint256 managerTokenId = managerNFT.mint(address(this));
         address[] memory tokens = new address[](2);
         tokens[0] = BASE_WETH;
@@ -39,7 +39,7 @@ contract BaseForkTest is Test {
         uint256[] memory weights = new uint256[](2);
         weights[0] = 5000;
         weights[1] = 5000;
-        OpenBSKT basket = new OpenBSKT(
+        OpenINDEX basket = new OpenINDEX(
             "Fork Basket",
             "FB",
             "test://base-fork",

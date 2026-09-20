@@ -22,7 +22,7 @@ interface IAdapterERC20 {
 
 /// @notice Fixed-target execution adapter for a quote generated off-chain.
 /// @dev Deploy one instance per approved venue. It never accepts an arbitrary target.
-contract OpenBSKTExecutionAdapter {
+contract OpenINDEXExecutionAdapter {
     address public immutable venue;
     uint256 private _locked = 1;
 
@@ -45,6 +45,10 @@ contract OpenBSKTExecutionAdapter {
     ) {
         if (venue_ == address(0)) revert BadVenue();
         venue = venue_;
+    }
+
+    function openINDEXAdapter() external pure returns (bytes4) {
+        return bytes4(keccak256("openINDEX"));
     }
 
     receive() external payable {}
@@ -124,25 +128,25 @@ contract OpenBSKTExecutionAdapter {
     }
 }
 
-contract OpenBSKTZeroExAdapter is OpenBSKTExecutionAdapter {
+contract OpenINDEXZeroExAdapter is OpenINDEXExecutionAdapter {
     constructor(
         address zeroExRouter
-    ) OpenBSKTExecutionAdapter(zeroExRouter) {}
+    ) OpenINDEXExecutionAdapter(zeroExRouter) {}
 }
 
-contract OpenBSKTAerodromeAdapter is OpenBSKTExecutionAdapter {
+contract OpenINDEXAerodromeAdapter is OpenINDEXExecutionAdapter {
     constructor(
         address aerodromeRouter
-    ) OpenBSKTExecutionAdapter(aerodromeRouter) {}
+    ) OpenINDEXExecutionAdapter(aerodromeRouter) {}
 }
 
-contract OpenBSKTZeroExPermit2Adapter is OpenBSKTExecutionAdapter {
+contract OpenINDEXZeroExPermit2Adapter is OpenINDEXExecutionAdapter {
     address public immutable allowanceTarget;
 
     constructor(
         address zeroExRouter,
         address allowanceTarget_
-    ) OpenBSKTExecutionAdapter(zeroExRouter) {
+    ) OpenINDEXExecutionAdapter(zeroExRouter) {
         if (allowanceTarget_ == address(0)) revert BadVenue();
         allowanceTarget = allowanceTarget_;
     }

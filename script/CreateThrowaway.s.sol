@@ -2,12 +2,12 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Script.sol";
-import "../src/OpenBSKT.sol";
-import "../src/OpenBSKTFactory.sol";
+import "../src/OpenINDEX.sol";
+import "../src/OpenINDEXFactory.sol";
 
 contract CreateThrowaway is Script {
     function run() external returns (address basket) {
-        OpenBSKTFactory factory = OpenBSKTFactory(vm.envAddress("FACTORY_ADDRESS"));
+        OpenINDEXFactory factory = OpenINDEXFactory(vm.envAddress("FACTORY_ADDRESS"));
         address signer = vm.envAddress("ROUTE_SIGNER");
         address[] memory tokens = new address[](3);
         tokens[0] = 0x226A2FA2556C48245E57cd1cbA4C6c9e67077DD2;
@@ -26,7 +26,7 @@ contract CreateThrowaway is Script {
             tokens,
             weights,
             signer,
-            type(OpenBSKT).creationCode
+            type(OpenINDEX).creationCode
         );
         vm.stopBroadcast();
     }

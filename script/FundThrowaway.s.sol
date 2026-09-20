@@ -2,21 +2,21 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Script.sol";
-import "../src/OpenBSKT.sol";
+import "../src/OpenINDEX.sol";
 
 contract FundThrowaway is Script {
     uint256 private constant DEPOSIT = 0.001 ether;
 
     function run() external {
-        OpenBSKT basket = OpenBSKT(payable(vm.envAddress("BASKET_ADDRESS")));
+        OpenINDEX basket = OpenINDEX(payable(vm.envAddress("BASKET_ADDRESS")));
         uint256 key = vm.envUint("DEPLOYER_PRIVATE_KEY");
         uint256 quotedShares = DEPOSIT;
         uint256 deadline = block.timestamp + 1 hours;
 
-        OpenBSKT.Swap[] memory swaps = new OpenBSKT.Swap[](3);
+        OpenINDEX.Swap[] memory swaps = new OpenINDEX.Swap[](3);
         (address[] memory tokens,) = basket.getConstituents();
         for (uint256 i; i < swaps.length; ++i) {
-            swaps[i] = OpenBSKT.Swap({
+            swaps[i] = OpenINDEX.Swap({
                 router: address(0), tokenIn: address(0), tokenOut: tokens[i], amountIn: 0, minOut: 0, value: 0, data: ""
             });
         }

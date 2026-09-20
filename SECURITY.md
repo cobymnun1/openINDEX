@@ -1,6 +1,6 @@
 # Security policy
 
-openBSKT is experimental and has not received an independent professional
+openINDEX is experimental and has not received an independent professional
 audit. Do not use it with funds you cannot afford to lose.
 
 ## Reporting a vulnerability

@@ -10,8 +10,8 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-/// @notice One transferable ERC-721 manager token per openBSKT basket.
-contract OpenBSKTManagerNFT {
+/// @notice One transferable ERC-721 manager token per openINDEX basket.
+contract OpenINDEXManagerNFT {
     string public name;
     string public symbol;
     address public immutable factory;

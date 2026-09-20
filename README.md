@@ -1,4 +1,4 @@
-# openBSKT
+# openINDEX
 
 Generic, permissionless multi-asset basket contracts for Base-compatible EVM
 chains. The core has no DSCB token list, API key, JWT, signer private key, or
@@ -7,9 +7,9 @@ venue address.
 > **Experimental software — audit requested.** This repository has not received
 > an independent professional audit and must not be treated as production-safe.
 
-## What openBSKT is
+## What openINDEX is
 
-openBSKT is an open basket-making protocol: anyone can deploy a basket with
+openINDEX is an open basket-making protocol: anyone can deploy a basket with
 their own constituents, weights, metadata, route signer, and manager. BIO, TRAC,
 TIG, and the DSCB example are configuration data, not protocol assumptions.
 
@@ -21,19 +21,19 @@ behavior they require.
 
 ## Contracts
 
-- `OpenBSKTFactory` lets anyone create a basket with its own constituents,
-  weights, metadata URI, route signer, and supplied `OpenBSKT` creation
-  bytecode. Supplying creation bytecode as calldata keeps the factory below
-  EIP-170's contract-size limit.
-- `OpenBSKT` is the basket share token. It supports direct proportional
+- `OpenINDEXFactory` lets anyone create a basket with its own constituents,
+  weights, metadata URI, and route signer. The factory stores the expected
+  `OpenINDEX` creation-code hash at deployment and rejects different bytecode,
+  while keeping the calldata deployment pattern that fits EIP-170.
+- `OpenINDEX` is the basket share token. It supports direct proportional
   contribution/withdrawal, ETH/USDC route wrappers, a pause switch, a
   timelocked composition change, and a signer nonce.
-- `OpenBSKTManagerNFT` is a real ERC-721. Its holder controls only the
+- `OpenINDEXManagerNFT` is a real ERC-721. Its holder controls only the
   associated basket's manager functions; it cannot withdraw reserves.
-- `OpenBSKTExecutionAdapter` is a fixed-target adapter. Deploy one per approved
-  0x or Aerodrome venue and allowlist that adapter in the basket. Route calldata
-  is still supplied by the caller, but the adapter target is immutable and
-  output is checked by balance delta.
+- `OpenINDEXExecutionAdapter` is a fixed-target adapter. Deploy one per approved
+  0x or Aerodrome venue and allowlist that adapter in the basket. Venue calldata
+  is supplied to the adapter, but its target is immutable and output is checked
+  by balance delta.
 
 The route signer is an off-chain operator selected by each basket manager. It
 signs quote parameters; it does not custody user funds. The manager NFT holder
@@ -81,7 +81,7 @@ oracle.
 ## Local commands
 
 ```sh
-cd openBSKT
+cd openINDEX
 /home/coby/.foundry/bin/forge test
 /home/coby/.foundry/bin/forge build
 ```

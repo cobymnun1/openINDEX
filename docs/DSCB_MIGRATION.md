@@ -20,4 +20,4 @@ migration must therefore be an explicit user action:
    the new basket's direct `redeemETH`/`redeemUSDC` paths.
 
 No migration adapter is included in the generic core because its old-contract
-ABI, permissions, and deployment address would make openBSKT non-generic.
+ABI, permissions, and deployment address would make openINDEX non-generic.

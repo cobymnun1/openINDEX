@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/OpenBSKTExecutionAdapter.sol";
+import "../src/OpenINDEXExecutionAdapter.sol";
 
 contract AdapterToken {
     mapping(address => uint256) public balanceOf;
@@ -62,11 +62,11 @@ contract MockVenue {
 }
 
 contract ReentrantVenue {
-    OpenBSKTExecutionAdapter public adapter;
+    OpenINDEXExecutionAdapter public adapter;
     bool public reentryBlocked;
 
     function setAdapter(
-        OpenBSKTExecutionAdapter adapter_
+        OpenINDEXExecutionAdapter adapter_
     ) external {
         adapter = adapter_;
     }
@@ -86,11 +86,11 @@ contract AdapterTest is Test {
     AdapterToken input = new AdapterToken();
     AdapterToken output = new AdapterToken();
     MockVenue venue = new MockVenue();
-    OpenBSKTExecutionAdapter adapter;
+    OpenINDEXExecutionAdapter adapter;
     address user = address(0x123);
 
     function setUp() public {
-        adapter = new OpenBSKTExecutionAdapter(address(venue));
+        adapter = new OpenINDEXExecutionAdapter(address(venue));
         input.mint(user, 100 ether);
         output.mint(address(venue), 95 ether);
         vm.deal(address(venue), 100 ether);
@@ -109,13 +109,13 @@ contract AdapterTest is Test {
 
     function testAdapterBlocksVenueReentry() public {
         ReentrantVenue reentrantVenue = new ReentrantVenue();
-        OpenBSKTExecutionAdapter guardedAdapter = new OpenBSKTExecutionAdapter(address(reentrantVenue));
+        OpenINDEXExecutionAdapter guardedAdapter = new OpenINDEXExecutionAdapter(address(reentrantVenue));
         reentrantVenue.setAdapter(guardedAdapter);
         input.mint(user, 1 ether);
         output.mint(address(reentrantVenue), 1 ether);
 
         bytes memory innerCall =
-            abi.encodeCall(OpenBSKTExecutionAdapter.swap, (address(input), address(output), 1, 1, bytes("")));
+            abi.encodeCall(OpenINDEXExecutionAdapter.swap, (address(input), address(output), 1, 1, bytes("")));
         bytes memory outerData = abi.encodeCall(ReentrantVenue.reenterAndPay, (innerCall, address(output), 1));
 
         vm.startPrank(user);
