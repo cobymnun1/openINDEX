@@ -3,10 +3,16 @@
   "network": "Base Sepolia",
   "factory": "0x9f21331a9DF229B26E2C0fc802F333bcaE4cB23B",
   "factoryDeploymentTx": "0xa0246191bd2f5b9d81f2ef52323023c581d2440eafcc4c9b1bd936656523b5e9",
-  "testBasket": "0x0114DA61FfD493fcEd467cECe5e33E0C2D575D9a",
-  "testBasketDeploymentTx": "0x104d5aa0011ce15dcfd1422b469c27300db163aefa1ee9b77035a112b10e008a",
-  "testBasketToken": "0x4200000000000000000000000000000000000006",
-  "testBasketWeightsBps": [10000],
+  "testBasket": "0x6C7833080e30220D7654046d54B8Fe5B1a4163e2",
+  "testBasketDeploymentTx": "0x3c622fd8d6d4899013503b2edad88655ec296f535a488d1931b4f6d3e29dcba7",
+  "testBasketTokens": {
+    "WETH": "0x4200000000000000000000000000000000000006",
+    "USDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+  },
+  "testBasketWeightsBps": [5000, 5000],
+  "testVenue": "0xFD5a271adc841af946Cb4BB195F0187F867b4b73",
+  "testAdapter": "0x5e55733A0C35F926F60d84bdC38De20Bc21bA636",
+  "testAdapterSetupTx": "0x680defb995031386a43f7f19d28e7c97793722767bb450fe5e275d24c1c244fe",
   "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   "deployer": "0xD3842dFbFD4700fCF4B0354B611fCD81b6679760",
   "purpose": "openINDEX Base Sepolia deployment"

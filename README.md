@@ -151,8 +151,10 @@ The openINDEX factory is deployed on Base Sepolia:
   `0x9f21331a9DF229B26E2C0fc802F333bcaE4cB23B`
 - Deployment transaction:
   `0xa0246191bd2f5b9d81f2ef52323023c581d2440eafcc4c9b1bd936656523b5e9`
-- WETH test basket:
-  `0x0114DA61FfD493fcEd467cECe5e33E0C2D575D9a`
+- WETH/USDC test basket:
+  `0x6C7833080e30220D7654046d54B8Fe5B1a4163e2`
+- Sepolia test adapter:
+  `0x5e55733A0C35F926F60d84bdC38De20Bc21bA636`
 
 Full metadata is in [`deployments/base-sepolia.json`](./deployments/base-sepolia.json).
 

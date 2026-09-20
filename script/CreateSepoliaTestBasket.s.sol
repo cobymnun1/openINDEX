@@ -9,18 +9,21 @@ contract CreateSepoliaTestBasket is Script {
     function run() external returns (address basket) {
         OpenINDEXFactory factory = OpenINDEXFactory(vm.envAddress("FACTORY_ADDRESS"));
         address weth = vm.envAddress("WETH_ADDRESS");
+        address usdc = vm.envAddress("USDC_ADDRESS");
         address signer = vm.envAddress("ROUTE_SIGNER");
 
-        address[] memory tokens = new address[](1);
+        address[] memory tokens = new address[](2);
         tokens[0] = weth;
-        uint256[] memory weights = new uint256[](1);
-        weights[0] = 10_000;
+        tokens[1] = usdc;
+        uint256[] memory weights = new uint256[](2);
+        weights[0] = 5000;
+        weights[1] = 5000;
 
         vm.startBroadcast();
         basket = factory.createBasket(
-            "openINDEX Sepolia Test",
+            "openINDEX Sepolia WETH USDC Test",
             "oINDEX",
-            "base-sepolia://openindex-weth-test",
+            "base-sepolia://openindex-weth-usdc-test",
             tokens,
             weights,
             signer,
