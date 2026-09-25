@@ -24,8 +24,12 @@ library IndexOracleLibrary {
         secondsAgos[0] = secondsAgo;
 
         (int56[] memory ticks, uint160[] memory liquidities) = IIndexV3Pool(pool).observe(secondsAgos);
-        int56 tickDelta = ticks[1] - ticks[0];
-        uint160 liquidityDelta = liquidities[1] - liquidities[0];
+        int56 tickDelta;
+        uint160 liquidityDelta;
+        unchecked {
+            tickDelta = ticks[1] - ticks[0];
+            liquidityDelta = liquidities[1] - liquidities[0];
+        }
 
         arithmeticMeanTick = int24(tickDelta / int56(uint56(secondsAgo)));
         if (tickDelta < 0 && tickDelta % int56(uint56(secondsAgo)) != 0) {
